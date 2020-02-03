@@ -87,10 +87,17 @@ public class FlickrFetchr {
         RootJsonDTO rootJsonDTO = gson.fromJson(jsonString, RootJsonDTO.class);
         GalleryItem[] galleryItemsArray = rootJsonDTO.getPhotos().getGalleryItems();
 
-        items.addAll(Arrays.asList(galleryItemsArray));
+        // filter out all the items with empty URLs
+        for (GalleryItem arrayItem : galleryItemsArray) {
+            if (arrayItem.getUrl() == null || arrayItem.getUrl().isEmpty()) {
+                continue;
+            }
+            items.add(arrayItem);
+        }
     }
 
-    private void parseItems(List<GalleryItem> items, JSONObject jsonBody) throws JSONException {
+    private void parseItems(List<GalleryItem> items, JSONObject jsonBody) throws
+            JSONException {
         JSONObject photosJsonObject = jsonBody.getJSONObject("photos");
         JSONArray photoJsonArray = photosJsonObject.getJSONArray("photo");
 

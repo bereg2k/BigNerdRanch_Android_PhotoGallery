@@ -1,14 +1,20 @@
 package com.bignerdranch.android.photogallery;
 
-import android.content.res.Configuration;
+import android.app.ActivityManager;
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
+import android.util.LruCache;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
-import android.widget.TextView;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -33,6 +39,7 @@ public class PhotoGalleryFragment extends Fragment {
 
     private PhotoAdapter mAdapter;
     private RecyclerView mPhotoRecyclerView;
+    private ThumbnailDownloader<PhotoHolder> mThumbnailDownloader;
     private int mPhotoRecyclerViewWidth;
 
     public static PhotoGalleryFragment newInstance() {
@@ -44,7 +51,40 @@ public class PhotoGalleryFragment extends Fragment {
         super.onCreate(savedInstanceState);
         setRetainInstance(IS_RETAIN_FRAGMENT);
         new FetchItemsTask().execute();
+
+        ActivityManager am = (ActivityManager) getContext().getSystemService(Context.ACTIVITY_SERVICE);
+        int cacheSize = am.getMemoryClass() * 1024 / 8;
+
+        Handler responseHandler = new Handler();
+        mThumbnailDownloader = new ThumbnailDownloader<PhotoHolder>(responseHandler);
+        mThumbnailDownloader.setThumbnailDownloadListener(new ThumbnailDownloader.ThumbnailDownloadListener<PhotoHolder>() {
+            @Override
+            public void onThumbnailDownloaded(PhotoHolder photoHolder, Bitmap thumbnail) {
+                Drawable drawable = new BitmapDrawable(getResources(), thumbnail);
+                photoHolder.bindDrawable(drawable);
+            }
+        });
+
+        mThumbnailDownloader.start();
+        mThumbnailDownloader.getLooper();
+        Log.i(TAG, "Background thread has started successfully");
+
+        mThumbnailDownloader.setCacheSize(cacheSize);
     }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        mThumbnailDownloader.quit();
+        Log.i(TAG, "Background thread has been successfully stopped");
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        mThumbnailDownloader.clearQueue();
+    }
+
 
     @Nullable
     @Override
@@ -68,7 +108,7 @@ public class PhotoGalleryFragment extends Fragment {
             }
         });
 
-        initGlobalLayoutListener();
+        initRecyclerGlobalLayoutListener();
         mPhotoRecyclerView.getViewTreeObserver().addOnGlobalLayoutListener(mGlobalLayoutListener);
 
         updateUI();
@@ -82,7 +122,7 @@ public class PhotoGalleryFragment extends Fragment {
      * Here, we calculate spanCount variable dynamically and use to change layout for RecyclerView
      * (change number of columns depending on the view's width)
      */
-    private void initGlobalLayoutListener() {
+    private void initRecyclerGlobalLayoutListener() {
         mGlobalLayoutListener = new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
             public void onGlobalLayout() {
@@ -127,15 +167,15 @@ public class PhotoGalleryFragment extends Fragment {
 
     private class PhotoHolder extends RecyclerView.ViewHolder {
 
-        private TextView mTitleTextView;
+        private ImageView mItemImageView;
 
         public PhotoHolder(@NonNull View itemView) {
             super(itemView);
-            mTitleTextView = (TextView) itemView;
+            mItemImageView = itemView.findViewById(R.id.item_image_view);
         }
 
-        public void bindGalleryItem(GalleryItem item) {
-            mTitleTextView.setText(item.toString());
+        public void bindDrawable(Drawable drawable) {
+            mItemImageView.setImageDrawable(drawable);
         }
     }
 
@@ -151,15 +191,17 @@ public class PhotoGalleryFragment extends Fragment {
         @Override
         public PhotoHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             LayoutInflater inflater = getActivity().getLayoutInflater();
-            View view = inflater.inflate(android.R.layout.simple_list_item_1, parent, false);
+            View view = inflater.inflate(R.layout.list_item_gallery, parent, false);
 
             return new PhotoHolder(view);
         }
 
         @Override
         public void onBindViewHolder(@NonNull PhotoHolder holder, int position) {
-            GalleryItem item = mGalleryItems.get(position);
-            holder.bindGalleryItem(item);
+            GalleryItem galleryItem = mGalleryItems.get(position);
+            Drawable placeholder = getResources().getDrawable(R.drawable.ic_placeholder);
+            holder.bindDrawable(placeholder);
+            mThumbnailDownloader.queueThumbnail(holder, galleryItem.getUrl());
         }
 
         @Override
