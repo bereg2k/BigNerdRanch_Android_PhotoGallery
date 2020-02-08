@@ -1,4 +1,8 @@
 <resources>
     <string name="app_name">Photo Gallery</string>
+
     <string name="list_item_content_description">Photo caption</string>
+
+    <string name="search">Search</string>
+    <string name="clear_search">Clear Search</string>
 </resources>
