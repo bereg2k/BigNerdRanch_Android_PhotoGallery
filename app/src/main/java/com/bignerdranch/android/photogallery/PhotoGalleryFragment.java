@@ -1,7 +1,9 @@
 package com.bignerdranch.android.photogallery;
 
 import android.app.ActivityManager;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.BitmapDrawable;
@@ -26,9 +28,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.SearchView;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,21 +40,27 @@ import static androidx.core.content.ContextCompat.getColor;
 
 public class PhotoGalleryFragment extends Fragment {
 
+    public static final String DIALOG_PHOTO = "DialogPhoto";
+
     private static final String TAG = "PhotoGalleryFragment";
     private static final boolean IS_RETAIN_FRAGMENT = true;
     private static final int SINGLE_COLUMN_WIDTH = 200;
+    private static final int MAX_IMAGE_SIZE = 4_096_000;
 
     private List<GalleryItem> mItems = new ArrayList<>();
     private int mPage = 1;
     private boolean mIsClearSearch;
+    private byte[] mFullSizeImageByteArray;
 
     private ViewTreeObserver.OnGlobalLayoutListener mGlobalLayoutListener;
 
     private PhotoAdapter mAdapter;
     private RecyclerView mPhotoRecyclerView;
     private ProgressBar mProgressBar;
+    private SearchView mSearchView;
     private ThumbnailDownloader<PhotoHolder> mThumbnailDownloader;
     private int mPhotoRecyclerViewWidth;
+    private boolean mIsNoConnection;
 
     public static PhotoGalleryFragment newInstance() {
         return new PhotoGalleryFragment();
@@ -96,16 +106,16 @@ public class PhotoGalleryFragment extends Fragment {
         inflater.inflate(R.menu.fragment_photo_gallery, menu);
 
         MenuItem searchItem = menu.findItem(R.id.menu_item_search);
-        final SearchView searchView = (SearchView) searchItem.getActionView();
-        searchView.setQuery(QueryPreferences.getStoredQuery(getContext()), true);
+        mSearchView = (SearchView) searchItem.getActionView();
+        mSearchView.setQuery(QueryPreferences.getStoredQuery(getContext()), true);
 
-        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+        mSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
                 Log.d(TAG, "onQueryTextSubmit: " + query);
                 QueryPreferences.setPrefSearchQuery(getContext(), query);
 
-                hideSoftKeyboard(searchView);
+                hideSoftKeyboard(mSearchView);
                 mPage = 1;
                 mPhotoRecyclerView.scrollToPosition(0);
 
@@ -121,11 +131,11 @@ public class PhotoGalleryFragment extends Fragment {
             }
         });
 
-        searchView.setOnSearchClickListener(new View.OnClickListener() {
+        mSearchView.setOnSearchClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 String query = QueryPreferences.getStoredQuery(getContext());
-                searchView.setQuery(query, false);
+                mSearchView.setQuery(query, false);
             }
         });
     }
@@ -137,7 +147,8 @@ public class PhotoGalleryFragment extends Fragment {
                 QueryPreferences.setPrefSearchQuery(getContext(), null);
 
                 mIsClearSearch = true;
-                hideSoftKeyboard(getView());
+                hideSoftKeyboard(mSearchView);
+                mSearchView.onActionViewCollapsed();
                 mPage = 1;
 
                 updateItems();
@@ -220,6 +231,10 @@ public class PhotoGalleryFragment extends Fragment {
     }
 
     private void updateUI(boolean isRefreshThumbs) {
+        if (mIsNoConnection) {
+            showNoConnectionAlert();
+        }
+
         if (isAdded()) {
             if (mAdapter == null) {
                 mAdapter = new PhotoAdapter(mItems);
@@ -252,17 +267,41 @@ public class PhotoGalleryFragment extends Fragment {
         }
     }
 
-    private class PhotoHolder extends RecyclerView.ViewHolder {
+    private class PhotoHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
 
         private ImageView mItemImageView;
+        private GalleryItem mGalleryItem;
 
         public PhotoHolder(@NonNull View itemView) {
             super(itemView);
             mItemImageView = itemView.findViewById(R.id.item_image_view);
+            mItemImageView.setOnClickListener(this);
         }
 
         public void bindDrawable(Drawable drawable) {
             mItemImageView.setImageDrawable(drawable);
+        }
+
+        @Override
+        public void onClick(View v) {
+            mFullSizeImageByteArray = null;
+            new FetchFullSizeItemTask(getAdapterPosition()).execute();
+
+            FragmentManager manager = getFragmentManager();
+            while (mFullSizeImageByteArray == null) {
+                // wait for mFullSizeImageBitmapArray to load actual image in the background
+                if (mIsNoConnection) {
+                    showNoConnectionAlert();
+                    return;
+                }
+            }
+            FullSizePhotoFragment dialog = FullSizePhotoFragment.newInstance(
+                    mFullSizeImageByteArray,
+                    mItems.get(getAdapterPosition()).getCaption(),
+                    mItems.get(getAdapterPosition()).getUrl(),
+                    mItems.get(getAdapterPosition()).getUrlBig()
+            );
+            dialog.show(manager, DIALOG_PHOTO);
         }
     }
 
@@ -297,6 +336,30 @@ public class PhotoGalleryFragment extends Fragment {
         }
     }
 
+    private void showNoConnectionAlert() {
+        new AlertDialog.Builder(getContext())
+                .setTitle("Error")
+                .setMessage("There's a connection problem with your network...")
+                .setPositiveButton("Quit", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        getActivity().finish();
+                    }
+                })
+                .setNeutralButton("Reload", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        updateItems();
+                    }
+                })
+                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                    }
+                })
+                .show();
+    }
+
     private class FetchItemsTask extends AsyncTask<Void, Void, List<GalleryItem>> {
         private String mQuery;
 
@@ -326,6 +389,12 @@ public class PhotoGalleryFragment extends Fragment {
 
         @Override
         protected void onPostExecute(List<GalleryItem> galleryItems) {
+            if (galleryItems.isEmpty()) {
+                mIsNoConnection = true;
+            } else {
+                mIsNoConnection = false;
+            }
+
             boolean isRefreshThumbs = mQuery != null && mPage == 1 || mIsClearSearch;
 
             if (isRefreshThumbs) {
@@ -338,6 +407,45 @@ public class PhotoGalleryFragment extends Fragment {
 
             mItems.addAll(galleryItems);
             updateUI(isRefreshThumbs);
+        }
+    }
+
+    private class FetchFullSizeItemTask extends AsyncTask<Void, Void, byte[]> {
+        private final int mItemPosition;
+
+        public FetchFullSizeItemTask(int itemPosition) {
+            mItemPosition = itemPosition;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            if (mProgressBar != null) {
+                mProgressBar.setVisibility(View.VISIBLE);
+            }
+        }
+
+        @Override
+        protected byte[] doInBackground(Void... voids) {
+            try {
+                byte[] tempImageBuffer;
+                tempImageBuffer = new FlickrFetchr().getUrlBytes(mItems.get(mItemPosition).getUrlBig());
+
+                if (tempImageBuffer.length >= MAX_IMAGE_SIZE) {
+                    mFullSizeImageByteArray = new FlickrFetchr().getUrlBytes(mItems.get(mItemPosition).getUrl());
+                } else {
+                    mFullSizeImageByteArray = tempImageBuffer;
+                }
+                mIsNoConnection = false;
+            } catch (IOException e) {
+                Log.e(TAG, e.getMessage(), e);
+                mIsNoConnection = true;
+            }
+            return mFullSizeImageByteArray;
+        }
+
+        @Override
+        protected void onPostExecute(byte[] bytes) {
+            mProgressBar.setVisibility(View.GONE);
         }
     }
 }

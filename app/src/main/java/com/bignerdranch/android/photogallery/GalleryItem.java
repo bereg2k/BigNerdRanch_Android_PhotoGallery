@@ -12,6 +12,8 @@ public class GalleryItem {
     private String mId;
     @SerializedName("url_s")
     private String mUrl;
+    @SerializedName("url_o")
+    private String mUrlBig;
 
     public String getCaption() {
         return mCaption;
@@ -25,6 +27,10 @@ public class GalleryItem {
         return mUrl;
     }
 
+    public String getUrlBig() {
+        return mUrlBig;
+    }
+
     public void setCaption(String caption) {
         mCaption = caption;
     }
@@ -35,6 +41,10 @@ public class GalleryItem {
 
     public void setUrl(String url) {
         mUrl = url;
+    }
+
+    public void setUrlBig(String mUrlBig) {
+        this.mUrlBig = mUrlBig;
     }
 
     @NonNull

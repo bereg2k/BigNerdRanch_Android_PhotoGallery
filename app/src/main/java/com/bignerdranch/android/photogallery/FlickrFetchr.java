@@ -11,6 +11,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -34,7 +35,7 @@ public class FlickrFetchr {
             .appendQueryParameter("api_key", API_KEY)
             .appendQueryParameter("format", "json")
             .appendQueryParameter("nojsoncallback", "1")
-            .appendQueryParameter("extras", "url_s")
+            .appendQueryParameter("extras", "url_s,url_o")
             .build();
 
     public byte[] getUrlBytes(String urlSpec) throws IOException {
@@ -56,6 +57,9 @@ public class FlickrFetchr {
             }
             out.close();
             return out.toByteArray();
+        } catch (FileNotFoundException e) {
+            Log.e(TAG, e.getMessage(), e);
+            return new byte[]{};
         } finally {
             connection.disconnect();
         }
@@ -111,7 +115,8 @@ public class FlickrFetchr {
 
         // filter out all the items with empty URLs
         for (GalleryItem arrayItem : galleryItemsArray) {
-            if (arrayItem.getUrl() == null || arrayItem.getUrl().isEmpty()) {
+            if (arrayItem.getUrl() == null || arrayItem.getUrl().isEmpty() ||
+                    arrayItem.getUrlBig() == null || arrayItem.getUrlBig().isEmpty()) {
                 continue;
             }
             items.add(arrayItem);

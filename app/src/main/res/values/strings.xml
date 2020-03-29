@@ -5,4 +5,8 @@
 
     <string name="search">Search</string>
     <string name="clear_search">Clear Search</string>
+
+    <string name="photo_name">Photo Name: %s</string>
+    <string name="photo_link_thumb">Photo Link Thumb: %s</string>
+    <string name="photo_link_original">Photo Link Original: %s</string>
 </resources>
