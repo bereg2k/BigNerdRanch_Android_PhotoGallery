@@ -1,7 +1,6 @@
 package com.bignerdranch.android.photogallery;
 
 import android.annotation.SuppressLint;
-import android.app.ActivityManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Handler;
@@ -20,7 +19,6 @@ public class ThumbnailDownloader<T> extends HandlerThread {
 
     private static final String TAG = "ThumbnailDownloader";
     private static final int MESSAGE_DOWNLOAD = 0;
-    private static int sUrlCounter = 0;
 
     private boolean mHasQuit = false;
     private Handler mRequestHandler;
@@ -46,7 +44,6 @@ public class ThumbnailDownloader<T> extends HandlerThread {
     @Override
     public boolean quit() {
         mHasQuit = true;
-        sUrlCounter = 0;
         return super.quit();
     }
 
@@ -99,7 +96,9 @@ public class ThumbnailDownloader<T> extends HandlerThread {
 
                     mRequestMap.remove(target);
                     mThumbnailDownloadListener.onThumbnailDownloaded(target, bitmap);
-                    mCache.put(url, bitmap);
+                    if (bitmap != null) {
+                        mCache.put(url, bitmap);
+                    }
                 }
             });
 
@@ -111,9 +110,9 @@ public class ThumbnailDownloader<T> extends HandlerThread {
     public void queueThumbnail(T target, String url) {
         if (url == null || url.isEmpty()) {
             mRequestMap.remove(target);
-            Log.e(TAG, "URL #" + sUrlCounter + " is NULL!");
+            Log.e(TAG, "URL is NULL!");
         } else {
-            Log.i(TAG, "Got URL #" + ++sUrlCounter + ":" + url);
+            Log.i(TAG, "Got URL :" + url);
             mRequestMap.put(target, url);
             mRequestHandler.obtainMessage(MESSAGE_DOWNLOAD, target).sendToTarget();
         }

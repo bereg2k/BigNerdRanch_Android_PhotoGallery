@@ -1,11 +1,15 @@
 package com.bignerdranch.android.photogallery;
 
-import androidx.appcompat.app.AppCompatActivity;
+import android.content.Context;
+import android.content.Intent;
+
 import androidx.fragment.app.Fragment;
 
-import android.os.Bundle;
-
 public class PhotoGalleryActivity extends SingleFragmentActivity {
+
+    public static Intent newIntent(Context context) {
+        return new Intent(context, PhotoGalleryActivity.class);
+    }
 
     @Override
     public Fragment createFragment() {

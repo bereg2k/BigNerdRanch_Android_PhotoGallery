@@ -9,6 +9,7 @@ import android.graphics.PorterDuff;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -77,7 +78,7 @@ public class PhotoGalleryFragment extends Fragment {
         int cacheSize = am.getMemoryClass() * 1024 / 8;
 
         Handler responseHandler = new Handler();
-        mThumbnailDownloader = new ThumbnailDownloader<PhotoHolder>(responseHandler);
+        mThumbnailDownloader = new ThumbnailDownloader<>(responseHandler);
         mThumbnailDownloader.setThumbnailDownloadListener(new ThumbnailDownloader.ThumbnailDownloadListener<PhotoHolder>() {
             @Override
             public void onThumbnailDownloaded(PhotoHolder photoHolder, Bitmap thumbnail) {
@@ -138,6 +139,18 @@ public class PhotoGalleryFragment extends Fragment {
                 mSearchView.setQuery(query, false);
             }
         });
+
+        MenuItem toggleItem = menu.findItem(R.id.menu_item_toggle_polling);
+
+        boolean isServiceOn = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP ?
+                PollJobService.isJobScheduled(getActivity()) :
+                PollService.isServiceAlarmOn(getActivity());
+        if (isServiceOn) {
+            toggleItem.setTitle(R.string.stop_polling);
+        } else {
+            toggleItem.setTitle(R.string.start_polling);
+        }
+
     }
 
     @Override
@@ -152,6 +165,17 @@ public class PhotoGalleryFragment extends Fragment {
                 mPage = 1;
 
                 updateItems();
+                return true;
+            case R.id.menu_item_toggle_polling:
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    boolean shouldStartAlarm = !PollJobService.isJobScheduled(getActivity());
+                    PollJobService.scheduleJob(getActivity(), shouldStartAlarm);
+                } else {
+                    boolean shouldStartAlarm = !PollService.isServiceAlarmOn(getActivity());
+                    PollService.setServiceAlarm(getActivity(), shouldStartAlarm);
+                }
+
+                getActivity().invalidateOptionsMenu();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -172,11 +196,6 @@ public class PhotoGalleryFragment extends Fragment {
                     Toast.makeText(getActivity(), "Loading results page #" + mPage, Toast.LENGTH_SHORT).show();
                     updateItems();
                 }
-            }
-
-            @Override
-            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
-                super.onScrolled(recyclerView, dx, dy);
             }
         });
 
@@ -261,16 +280,9 @@ public class PhotoGalleryFragment extends Fragment {
         inputMethodManager.hideSoftInputFromWindow(view.getWindowToken(), 0);
     }
 
-    private void setupAdapter() {
-        if (isAdded()) {
-            mPhotoRecyclerView.setAdapter(new PhotoAdapter(mItems));
-        }
-    }
-
     private class PhotoHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
 
         private ImageView mItemImageView;
-        private GalleryItem mGalleryItem;
 
         public PhotoHolder(@NonNull View itemView) {
             super(itemView);
@@ -355,6 +367,7 @@ public class PhotoGalleryFragment extends Fragment {
                 .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
+                        // just cancelling the dialog, works out of the box
                     }
                 })
                 .show();
@@ -389,11 +402,7 @@ public class PhotoGalleryFragment extends Fragment {
 
         @Override
         protected void onPostExecute(List<GalleryItem> galleryItems) {
-            if (galleryItems.isEmpty()) {
-                mIsNoConnection = true;
-            } else {
-                mIsNoConnection = false;
-            }
+            mIsNoConnection = galleryItems.isEmpty();
 
             boolean isRefreshThumbs = mQuery != null && mPage == 1 || mIsClearSearch;
 
