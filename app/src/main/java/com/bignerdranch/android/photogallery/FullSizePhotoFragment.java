@@ -6,7 +6,6 @@ import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -36,25 +35,6 @@ public class FullSizePhotoFragment extends DialogFragment {
         fragment.setArguments(args);
 
         return fragment;
-    }
-
-    @Nullable
-    @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fullsize_item_gallery, container, false);
-
-        mImageView = view.findViewById(R.id.full_size_item_image_view);
-        byte[] imageArray = getArguments().getByteArray(ARG_BYTE_ARRAY);
-        mImageView.setImageBitmap(BitmapFactory.decodeByteArray(imageArray, 0, imageArray.length));
-
-        mNameTextView = view.findViewById(R.id.full_size_item_caption);
-        mNameTextView.setText(getString(R.string.photo_name, getArguments().getString(ARG_NAME)));
-        mThumbLinkTextView = view.findViewById(R.id.full_size_item_link_thumb);
-        mThumbLinkTextView.setText(getString(R.string.photo_link_thumb, getArguments().getString(ARG_URL)));
-        mOriginalLinkTextView = view.findViewById(R.id.full_size_item_link_original);
-        mOriginalLinkTextView.setText(getString(R.string.photo_link_original, getArguments().getString(ARG_URL_BIG)));
-
-        return view;
     }
 
     @NonNull

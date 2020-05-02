@@ -1,5 +1,6 @@
 package com.bignerdranch.android.photogallery;
 
+import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -21,6 +22,11 @@ import androidx.core.app.NotificationManagerCompat;
 
 import java.util.List;
 
+import static com.bignerdranch.android.photogallery.PollService.ACTION_SHOW_NOTIFICATION;
+import static com.bignerdranch.android.photogallery.PollService.NOTIFICATION;
+import static com.bignerdranch.android.photogallery.PollService.PERM_PRIVATE;
+import static com.bignerdranch.android.photogallery.PollService.REQUEST_CODE;
+
 /**
  * Service for background polling for new results.
  * Works with devices with Android API >= LOLLIPOP (21).
@@ -29,7 +35,7 @@ import java.util.List;
  * too often -- not less than every 15 minutes!
  */
 public class PollJobService extends JobService {
-    private static final String TAG = "PollJobService";
+    private static final String TAG = PollJobService.class.getSimpleName();
     private static final int JOB_ID = 1;
 
     private PollTask mPollTask;
@@ -54,6 +60,8 @@ public class PollJobService extends JobService {
         } else {
             jobScheduler.cancel(JOB_ID);
         }
+
+        QueryPreferences.setAlarmOn(context, turnOn);
     }
 
     /**
@@ -146,12 +154,30 @@ public class PollJobService extends JobService {
                         .setAutoCancel(true)
                         .build();
 
-                notificationManager.notify(0, notification);
+                showBackgroundNotification(0, notification);
             }
 
             QueryPreferences.setLastResultId(getApplicationContext(), resultId);
 
             return null;
+        }
+
+        /**
+         * Send an ordered broadcast to notification receiver ({@link NotificationReceiver}.
+         * If main app's fragment is currently active, then notification will be cancelled.
+         * Otherwise, it will be shown among notifications as usual
+         *
+         * @param requestCode  code for a notification
+         * @param notification notification object to send in case the app is not active
+         */
+        private void showBackgroundNotification(int requestCode, Notification notification) {
+            Intent intent = new Intent(ACTION_SHOW_NOTIFICATION);
+            intent.putExtra(REQUEST_CODE, requestCode);
+            intent.putExtra(NOTIFICATION, notification);
+            sendOrderedBroadcast(intent, PERM_PRIVATE,
+                    null, null,
+                    Activity.RESULT_OK,
+                    null, null);
         }
     }
 }

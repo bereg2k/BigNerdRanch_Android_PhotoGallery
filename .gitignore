@@ -14,3 +14,5 @@
 .externalNativeBuild
 .cxx
 gradlew
+.idea
+.idea/gradle.xml

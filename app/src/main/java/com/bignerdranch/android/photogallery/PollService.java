@@ -1,5 +1,6 @@
 package com.bignerdranch.android.photogallery;
 
+import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.IntentService;
 import android.app.Notification;
@@ -26,8 +27,14 @@ import java.util.concurrent.TimeUnit;
  * Works with devices with Android API = pre-LOLLIPOP (21) or older.
  */
 public class PollService extends IntentService {
-    private static final String TAG = "PollService";
+    private static final String TAG = PollService.class.getSimpleName();
     private static final long POLL_INTERVAL_MS = TimeUnit.MINUTES.toMillis(1);
+
+    public static final String ACTION_SHOW_NOTIFICATION =
+            "com.bignerdranch.android.photogallery.SHOW_NOTIFICATION";
+    public static final String PERM_PRIVATE = "com.bignerdranch.android.photogallery.PRIVATE";
+    public static final String REQUEST_CODE = "REQUEST_CODE";
+    public static final String NOTIFICATION = "NOTIFICATION";
 
     public PollService() {
         super(TAG);
@@ -56,6 +63,8 @@ public class PollService extends IntentService {
             alarmManager.cancel(pi);
             pi.cancel();
         }
+
+        QueryPreferences.setAlarmOn(context, turnOn);
     }
 
     /**
@@ -127,10 +136,28 @@ public class PollService extends IntentService {
                     .setAutoCancel(true)
                     .build();
 
-            notificationManager.notify(0, notification);
+            showBackgroundNotification(0, notification);
         }
 
         QueryPreferences.setLastResultId(this, resultId);
+    }
+
+    /**
+     * Send an ordered broadcast to notification receiver ({@link NotificationReceiver}.
+     * If main app's fragment is currently active, then notification will be cancelled.
+     * Otherwise, it will be shown among notifications as usual
+     *
+     * @param requestCode  code for a notification
+     * @param notification notification object to send in case the app is not active
+     */
+    private void showBackgroundNotification(int requestCode, Notification notification) {
+        Intent intent = new Intent(ACTION_SHOW_NOTIFICATION);
+        intent.putExtra(REQUEST_CODE, requestCode);
+        intent.putExtra(NOTIFICATION, notification);
+        sendOrderedBroadcast(intent, PERM_PRIVATE,
+                null, null,
+                Activity.RESULT_OK,
+                null, null);
     }
 
     /**

@@ -28,7 +28,6 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.SearchView;
-import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -39,9 +38,14 @@ import java.util.List;
 
 import static androidx.core.content.ContextCompat.getColor;
 
-public class PhotoGalleryFragment extends Fragment {
+public class PhotoGalleryFragment extends VisibleFragment {
 
     public static final String DIALOG_PHOTO = "DialogPhoto";
+    /**
+     * hardcoded turning on/off background work via JobService.
+     * IntentService will be used if IS_JOB_SERVICE_ACTIVE = true.
+     */
+    public static final boolean IS_JOB_SERVICE_ACTIVE = false;
 
     private static final String TAG = "PhotoGalleryFragment";
     private static final boolean IS_RETAIN_FRAGMENT = true;
@@ -142,7 +146,8 @@ public class PhotoGalleryFragment extends Fragment {
 
         MenuItem toggleItem = menu.findItem(R.id.menu_item_toggle_polling);
 
-        boolean isServiceOn = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP ?
+        boolean isServiceOn = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
+                && IS_JOB_SERVICE_ACTIVE ?
                 PollJobService.isJobScheduled(getActivity()) :
                 PollService.isServiceAlarmOn(getActivity());
         if (isServiceOn) {
@@ -167,7 +172,8 @@ public class PhotoGalleryFragment extends Fragment {
                 updateItems();
                 return true;
             case R.id.menu_item_toggle_polling:
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
+                        && IS_JOB_SERVICE_ACTIVE) {
                     boolean shouldStartAlarm = !PollJobService.isJobScheduled(getActivity());
                     PollJobService.scheduleJob(getActivity(), shouldStartAlarm);
                 } else {
@@ -416,6 +422,8 @@ public class PhotoGalleryFragment extends Fragment {
 
             mItems.addAll(galleryItems);
             updateUI(isRefreshThumbs);
+
+            QueryPreferences.setLastResultId(getActivity(), mItems.get(0).getId());
         }
     }
 

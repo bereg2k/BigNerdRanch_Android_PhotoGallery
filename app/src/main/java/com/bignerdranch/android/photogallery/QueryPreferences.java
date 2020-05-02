@@ -9,6 +9,7 @@ import android.preference.PreferenceManager;
 public class QueryPreferences {
     private static final String PREF_SEARCH_QUERY = "searchQuery";
     private static final String PREF_LAST_RESULT_ID = "lastResultId";
+    private static final String PREF_IS_ALARM_ON = "isAlarmOn";
 
     private QueryPreferences() {
         throw new IllegalStateException("This is a Utility class!");
@@ -37,6 +38,17 @@ public class QueryPreferences {
     }
 
     /**
+     * get current state of the alarm for polling new results from memory
+     *
+     * @param context current context
+     * @return true, if alarm is currently ON
+     */
+    public static boolean isAlarmOn(Context context) {
+        return PreferenceManager.getDefaultSharedPreferences(context)
+                .getBoolean(PREF_IS_ALARM_ON, false);
+    }
+
+    /**
      * save a current search query to the internal memory
      *
      * @param context current context
@@ -57,6 +69,19 @@ public class QueryPreferences {
         PreferenceManager.getDefaultSharedPreferences(context)
                 .edit()
                 .putString(PREF_LAST_RESULT_ID, lastResultId)
+                .apply();
+    }
+
+    /**
+     * save current state of the alarm for polling new results to the device's memory
+     *
+     * @param context current context
+     * @param isOn    true, if alarm is currently ON
+     */
+    public static void setAlarmOn(Context context, boolean isOn) {
+        PreferenceManager.getDefaultSharedPreferences(context)
+                .edit()
+                .putBoolean(PREF_IS_ALARM_ON, isOn)
                 .apply();
     }
 }
