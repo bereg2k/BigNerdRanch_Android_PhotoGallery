@@ -4,7 +4,7 @@ import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.graphics.Bitmap;
+import android.content.Intent;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -28,11 +28,9 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.SearchView;
-import androidx.fragment.app.FragmentManager;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,12 +48,10 @@ public class PhotoGalleryFragment extends VisibleFragment {
     private static final String TAG = "PhotoGalleryFragment";
     private static final boolean IS_RETAIN_FRAGMENT = true;
     private static final int SINGLE_COLUMN_WIDTH = 200;
-    private static final int MAX_IMAGE_SIZE = 4_096_000;
 
     private List<GalleryItem> mItems = new ArrayList<>();
     private int mPage = 1;
     private boolean mIsClearSearch;
-    private byte[] mFullSizeImageByteArray;
 
     private ViewTreeObserver.OnGlobalLayoutListener mGlobalLayoutListener;
 
@@ -83,12 +79,9 @@ public class PhotoGalleryFragment extends VisibleFragment {
 
         Handler responseHandler = new Handler();
         mThumbnailDownloader = new ThumbnailDownloader<>(responseHandler);
-        mThumbnailDownloader.setThumbnailDownloadListener(new ThumbnailDownloader.ThumbnailDownloadListener<PhotoHolder>() {
-            @Override
-            public void onThumbnailDownloaded(PhotoHolder photoHolder, Bitmap thumbnail) {
-                Drawable drawable = new BitmapDrawable(getResources(), thumbnail);
-                photoHolder.bindDrawable(drawable);
-            }
+        mThumbnailDownloader.setThumbnailDownloadListener((photoHolder, thumbnail) -> {
+            Drawable drawable = new BitmapDrawable(getResources(), thumbnail);
+            photoHolder.bindDrawable(drawable);
         });
 
         mThumbnailDownloader.start();
@@ -289,6 +282,7 @@ public class PhotoGalleryFragment extends VisibleFragment {
     private class PhotoHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
 
         private ImageView mItemImageView;
+        private GalleryItem mGalleryItem;
 
         public PhotoHolder(@NonNull View itemView) {
             super(itemView);
@@ -300,26 +294,14 @@ public class PhotoGalleryFragment extends VisibleFragment {
             mItemImageView.setImageDrawable(drawable);
         }
 
+        public void bindGalleryItem(GalleryItem galleryItem) {
+            mGalleryItem = galleryItem;
+        }
+
         @Override
         public void onClick(View v) {
-            mFullSizeImageByteArray = null;
-            new FetchFullSizeItemTask(getAdapterPosition()).execute();
-
-            FragmentManager manager = getFragmentManager();
-            while (mFullSizeImageByteArray == null) {
-                // wait for mFullSizeImageBitmapArray to load actual image in the background
-                if (mIsNoConnection) {
-                    showNoConnectionAlert();
-                    return;
-                }
-            }
-            FullSizePhotoFragment dialog = FullSizePhotoFragment.newInstance(
-                    mFullSizeImageByteArray,
-                    mItems.get(getAdapterPosition()).getCaption(),
-                    mItems.get(getAdapterPosition()).getUrl(),
-                    mItems.get(getAdapterPosition()).getUrlBig()
-            );
-            dialog.show(manager, DIALOG_PHOTO);
+            Intent intent = PhotoPageActivity.newIntent(getActivity(), mGalleryItem.getPhotoPageUri());
+            startActivity(intent);
         }
     }
 
@@ -345,6 +327,7 @@ public class PhotoGalleryFragment extends VisibleFragment {
             GalleryItem galleryItem = mGalleryItems.get(position);
             Drawable placeholder = getResources().getDrawable(R.drawable.ic_placeholder);
             holder.bindDrawable(placeholder);
+            holder.bindGalleryItem(galleryItem);
             mThumbnailDownloader.queueThumbnail(holder, galleryItem.getUrl());
         }
 
@@ -424,45 +407,6 @@ public class PhotoGalleryFragment extends VisibleFragment {
             updateUI(isRefreshThumbs);
 
             QueryPreferences.setLastResultId(getActivity(), mItems.get(0).getId());
-        }
-    }
-
-    private class FetchFullSizeItemTask extends AsyncTask<Void, Void, byte[]> {
-        private final int mItemPosition;
-
-        public FetchFullSizeItemTask(int itemPosition) {
-            mItemPosition = itemPosition;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            if (mProgressBar != null) {
-                mProgressBar.setVisibility(View.VISIBLE);
-            }
-        }
-
-        @Override
-        protected byte[] doInBackground(Void... voids) {
-            try {
-                byte[] tempImageBuffer;
-                tempImageBuffer = new FlickrFetchr().getUrlBytes(mItems.get(mItemPosition).getUrlBig());
-
-                if (tempImageBuffer.length >= MAX_IMAGE_SIZE) {
-                    mFullSizeImageByteArray = new FlickrFetchr().getUrlBytes(mItems.get(mItemPosition).getUrl());
-                } else {
-                    mFullSizeImageByteArray = tempImageBuffer;
-                }
-                mIsNoConnection = false;
-            } catch (IOException e) {
-                Log.e(TAG, e.getMessage(), e);
-                mIsNoConnection = true;
-            }
-            return mFullSizeImageByteArray;
-        }
-
-        @Override
-        protected void onPostExecute(byte[] bytes) {
-            mProgressBar.setVisibility(View.GONE);
         }
     }
 }
