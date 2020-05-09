@@ -101,9 +101,10 @@ public class FlickrFetchr {
     }
 
     /**
-     * GET request to fetch the most recent uploaded photos on Flickr.
+     * GET request to search for photos on Flickr by user-defined query request.
      *
-     * @param page number of current page (the results come in packs of 100 or so, hence pages)
+     * @param query search query by which to search relevant photos (e.g. "cars", "guns", "nature"...)
+     * @param page  number of current page (the results come in packs of 100 or so, hence pages)
      * @return list of all the recent photos in the form of collection of GalleryItem objects
      */
     public List<GalleryItem> searchPhoto(String query, int page) {
