@@ -107,7 +107,7 @@ public class FlickrFetchr {
      * @param page  number of current page (the results come in packs of 100 or so, hence pages)
      * @return list of all the recent photos in the form of collection of GalleryItem objects
      */
-    public List<GalleryItem> searchPhoto(String query, int page) {
+    public List<GalleryItem> searchPhotos(String query, int page) {
         String url = buildUrl(SEARCH_METHOD, query, String.valueOf(page));
         return downloadGalleryItems(url);
     }

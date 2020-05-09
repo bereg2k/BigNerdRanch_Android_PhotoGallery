@@ -395,7 +395,7 @@ public class PhotoGalleryFragment extends VisibleFragment {
         @Override
         protected List<GalleryItem> doInBackground(Void... params) {
             if (mQuery != null) {
-                return new FlickrFetchr().searchPhoto(mQuery, mPage);
+                return new FlickrFetchr().searchPhotos(mQuery, mPage);
             } else {
                 return new FlickrFetchr().fetchRecentPhotos(mPage);
             }

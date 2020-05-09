@@ -123,7 +123,7 @@ public class PollJobService extends JobService {
             if (query == null) {
                 items = new FlickrFetchr().fetchRecentPhotos(0);
             } else {
-                items = new FlickrFetchr().searchPhoto(query, 0);
+                items = new FlickrFetchr().searchPhotos(query, 0);
             }
 
             if (items.isEmpty()) {
