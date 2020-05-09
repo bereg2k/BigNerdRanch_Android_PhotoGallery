@@ -173,8 +173,7 @@ public class FlickrFetchr {
 
         // filter out all the items with empty URLs
         for (GalleryItem arrayItem : galleryItemsArray) {
-            if (arrayItem.getUrl() == null || arrayItem.getUrl().isEmpty() ||
-                    arrayItem.getUrlBig() == null || arrayItem.getUrlBig().isEmpty()) {
+            if (arrayItem.getUrl() == null || arrayItem.getUrl().isEmpty()) {
                 continue;
             }
             items.add(arrayItem);
