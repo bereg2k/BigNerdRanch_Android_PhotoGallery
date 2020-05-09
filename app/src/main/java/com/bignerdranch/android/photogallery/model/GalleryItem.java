@@ -1,4 +1,4 @@
-package com.bignerdranch.android.photogallery;
+package com.bignerdranch.android.photogallery.model;
 
 import android.net.Uri;
 
@@ -6,6 +6,10 @@ import androidx.annotation.NonNull;
 
 import com.google.gson.annotations.SerializedName;
 
+/**
+ * Class for a basic representation of a data class to incapsulate all variables and methods
+ * for working with individual photo objects.
+ */
 public class GalleryItem {
 
     @SerializedName("title")

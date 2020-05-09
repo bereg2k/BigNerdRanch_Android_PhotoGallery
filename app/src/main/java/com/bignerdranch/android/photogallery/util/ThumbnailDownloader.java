@@ -1,4 +1,4 @@
-package com.bignerdranch.android.photogallery;
+package com.bignerdranch.android.photogallery.util;
 
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
@@ -15,6 +15,11 @@ import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+/**
+ * Special utility class that handles downloading of gallery's thumbnails (small photos).
+ *
+ * @param <T> abstract placeholder for "target" object that's being downloaded.
+ */
 public class ThumbnailDownloader<T> extends HandlerThread {
 
     private static final String TAG = "ThumbnailDownloader";
@@ -122,10 +127,18 @@ public class ThumbnailDownloader<T> extends HandlerThread {
         mThumbnailDownloadListener = listener;
     }
 
+    /**
+     * Interface to handle callbacks when desired image is successfully downloaded.
+     *
+     * @param <T> abstract placeholder for "target" object that's being downloaded.
+     */
     public interface ThumbnailDownloadListener<T> {
         void onThumbnailDownloaded(T target, Bitmap thumbnail);
     }
 
+    /**
+     * Special class to represent a logic to work with cache for temporary storing of images.
+     */
     private class MyLruCache extends LruCache<String, Bitmap> {
 
         /**

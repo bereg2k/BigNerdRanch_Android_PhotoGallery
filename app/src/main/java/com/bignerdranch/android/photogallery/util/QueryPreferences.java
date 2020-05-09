@@ -1,4 +1,4 @@
-package com.bignerdranch.android.photogallery;
+package com.bignerdranch.android.photogallery.util;
 
 import android.content.Context;
 import android.preference.PreferenceManager;

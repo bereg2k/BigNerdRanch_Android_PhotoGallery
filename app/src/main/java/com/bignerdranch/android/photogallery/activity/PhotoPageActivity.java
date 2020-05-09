@@ -1,4 +1,4 @@
-package com.bignerdranch.android.photogallery;
+package com.bignerdranch.android.photogallery.activity;
 
 import android.content.Context;
 import android.content.Intent;
@@ -7,6 +7,9 @@ import android.webkit.WebView;
 
 import androidx.annotation.IdRes;
 import androidx.fragment.app.Fragment;
+
+import com.bignerdranch.android.photogallery.fragment.PhotoPageFragment;
+import com.bignerdranch.android.photogallery.R;
 
 /**
  * Activity for hosting {@link PhotoPageFragment} - web page view inside the app.

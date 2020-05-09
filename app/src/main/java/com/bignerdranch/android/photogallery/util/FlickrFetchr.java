@@ -1,9 +1,10 @@
-package com.bignerdranch.android.photogallery;
+package com.bignerdranch.android.photogallery.util;
 
 import android.net.Uri;
 import android.util.Log;
 
-import com.bignerdranch.android.photogallery.dto.RootJsonDTO;
+import com.bignerdranch.android.photogallery.model.GalleryItem;
+import com.bignerdranch.android.photogallery.util.dto.RootJsonDTO;
 import com.google.gson.Gson;
 
 import org.json.JSONArray;
@@ -19,7 +20,11 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-
+/**
+ * Utility class to fetch data from Flickr:
+ * <p> - download JSON files with image's data </p>
+ * <p> - download images as byte objects </p>
+ */
 public class FlickrFetchr {
 
     private static final String TAG = "FlickrFetchr";
@@ -35,9 +40,16 @@ public class FlickrFetchr {
             .appendQueryParameter("api_key", API_KEY)
             .appendQueryParameter("format", "json")
             .appendQueryParameter("nojsoncallback", "1")
-            .appendQueryParameter("extras", "url_s,url_o")
+            .appendQueryParameter("extras", "url_s")
             .build();
 
+    /**
+     * Download objects via provided URL and receive them in raw byte form.
+     *
+     * @param urlSpec URL to download data from
+     * @return byte array with downloaded object's data
+     * @throws IOException exception, in case a client messes up the URL somehow.
+     */
     public byte[] getUrlBytes(String urlSpec) throws IOException {
         URL url = new URL(urlSpec);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -65,20 +77,46 @@ public class FlickrFetchr {
         }
     }
 
+    /**
+     * Download objects via provided URL and receive them in string format.
+     * Normally, this is a request for JSON files to get data for {@link GalleryItem} objects.
+     *
+     * @param urlSpec URL to download data from
+     * @return string representation of downloaded object's data
+     * @throws IOException exception, in case a client messes up the URL somehow.
+     */
     public String getUrlString(String urlSpec) throws IOException {
         return new String(getUrlBytes(urlSpec));
     }
 
+    /**
+     * GET request to fetch the most recent uploaded photos on Flickr.
+     *
+     * @param page number of current page (the results come in packs of 100 or so, hence pages)
+     * @return list of all the recent photos in the form of collection of GalleryItem objects
+     */
     public List<GalleryItem> fetchRecentPhotos(int page) {
         String url = buildUrl(FETCH_RECENTS_METHOD, null, String.valueOf(page));
         return downloadGalleryItems(url);
     }
 
+    /**
+     * GET request to fetch the most recent uploaded photos on Flickr.
+     *
+     * @param page number of current page (the results come in packs of 100 or so, hence pages)
+     * @return list of all the recent photos in the form of collection of GalleryItem objects
+     */
     public List<GalleryItem> searchPhoto(String query, int page) {
         String url = buildUrl(SEARCH_METHOD, query, String.valueOf(page));
         return downloadGalleryItems(url);
     }
 
+    /**
+     * Download photo's data via provided URL.
+     *
+     * @param url URL to request a data from
+     * @return collection of {@link GalleryItem} objects parsed from URL request
+     */
     private List<GalleryItem> downloadGalleryItems(String url) {
         List<GalleryItem> items = new ArrayList<>();
 
@@ -95,6 +133,14 @@ public class FlickrFetchr {
         return items;
     }
 
+    /**
+     * Getting a standard URL request string for Flickr with some required parameters.
+     *
+     * @param method one of the set Flickr method like "flickr.photos.getRecent"
+     * @param query  value for search query (optional)
+     * @param page   number of page or a pack of data (optional)
+     * @return
+     */
     private String buildUrl(String method, String query, String page) {
         Uri.Builder uriBuilder = ENDPOINT.buildUpon()
                 .appendQueryParameter("method", method);
@@ -108,6 +154,17 @@ public class FlickrFetchr {
         return uriBuilder.build().toString();
     }
 
+    /**
+     * Convert a data object in the JSON form into collection of {@link GalleryItem} objects.
+     * <p></p>
+     * Warning! For parsing JSON this method uses special DTO objects
+     * to represent how to map out JSON data to actual Java objects.
+     * (see {@link com.bignerdranch.android.photogallery.util.dto.PhotosDTO} for reference)
+     * It's required by Gson API design that is being used here.
+     *
+     * @param items      collection of model objects
+     * @param jsonString string representation of JSON data to parse
+     */
     private void parseItemsGson(List<GalleryItem> items, String jsonString) {
         Gson gson = new Gson();
         RootJsonDTO rootJsonDTO = gson.fromJson(jsonString, RootJsonDTO.class);
@@ -123,6 +180,14 @@ public class FlickrFetchr {
         }
     }
 
+    /**
+     * Convert a data object in the JSON form into collection of {@link GalleryItem} objects.
+     *
+     * @param items    collection of model objects
+     * @param jsonBody JSON object with photo's data
+     * @throws JSONException exception to throw if JSON data is messed up somehow.
+     * @deprecated use {@link FlickrFetchr#parseItemsGson}
+     */
     private void parseItems(List<GalleryItem> items, JSONObject jsonBody) throws
             JSONException {
         JSONObject photosJsonObject = jsonBody.getJSONObject("photos");

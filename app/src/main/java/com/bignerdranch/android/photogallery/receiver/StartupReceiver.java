@@ -1,4 +1,4 @@
-package com.bignerdranch.android.photogallery;
+package com.bignerdranch.android.photogallery.receiver;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -6,7 +6,11 @@ import android.content.Intent;
 import android.os.Build;
 import android.util.Log;
 
-import static com.bignerdranch.android.photogallery.PhotoGalleryFragment.IS_JOB_SERVICE_ACTIVE;
+import com.bignerdranch.android.photogallery.service.PollJobService;
+import com.bignerdranch.android.photogallery.service.PollService;
+import com.bignerdranch.android.photogallery.util.QueryPreferences;
+
+import static com.bignerdranch.android.photogallery.fragment.PhotoGalleryFragment.IS_JOB_SERVICE_ACTIVE;
 
 /**
  * Standalone broadcast receiver that controls the device going power OFF and ON.

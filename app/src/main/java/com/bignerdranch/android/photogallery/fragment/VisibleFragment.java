@@ -1,4 +1,4 @@
-package com.bignerdranch.android.photogallery;
+package com.bignerdranch.android.photogallery.fragment;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
@@ -8,6 +8,8 @@ import android.content.IntentFilter;
 import android.util.Log;
 
 import androidx.fragment.app.Fragment;
+
+import com.bignerdranch.android.photogallery.service.PollService;
 
 /**
  * Parent class for app's main fragment ({@link PhotoGalleryFragment}).

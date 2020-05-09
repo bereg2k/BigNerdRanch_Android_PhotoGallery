@@ -1,4 +1,4 @@
-package com.bignerdranch.android.photogallery;
+package com.bignerdranch.android.photogallery.receiver;
 
 import android.app.Activity;
 import android.app.Notification;
@@ -8,6 +8,8 @@ import android.content.Intent;
 import android.util.Log;
 
 import androidx.core.app.NotificationManagerCompat;
+
+import com.bignerdranch.android.photogallery.service.PollService;
 
 /**
  * Special standalone broadcast receiver to listen to broadcast messages from the app itself.

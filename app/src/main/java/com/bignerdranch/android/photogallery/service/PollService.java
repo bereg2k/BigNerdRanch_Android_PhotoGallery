@@ -1,4 +1,4 @@
-package com.bignerdranch.android.photogallery;
+package com.bignerdranch.android.photogallery.service;
 
 import android.app.Activity;
 import android.app.AlarmManager;
@@ -18,6 +18,13 @@ import android.util.Log;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+
+import com.bignerdranch.android.photogallery.receiver.NotificationReceiver;
+import com.bignerdranch.android.photogallery.util.QueryPreferences;
+import com.bignerdranch.android.photogallery.R;
+import com.bignerdranch.android.photogallery.activity.PhotoGalleryActivity;
+import com.bignerdranch.android.photogallery.model.GalleryItem;
+import com.bignerdranch.android.photogallery.util.FlickrFetchr;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;

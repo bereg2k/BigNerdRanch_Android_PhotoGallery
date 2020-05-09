@@ -1,4 +1,4 @@
-package com.bignerdranch.android.photogallery;
+package com.bignerdranch.android.photogallery.fragment;
 
 import android.app.ActivityManager;
 import android.app.AlertDialog;
@@ -31,11 +31,23 @@ import androidx.appcompat.widget.SearchView;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bignerdranch.android.photogallery.R;
+import com.bignerdranch.android.photogallery.activity.PhotoPageActivity;
+import com.bignerdranch.android.photogallery.model.GalleryItem;
+import com.bignerdranch.android.photogallery.service.PollJobService;
+import com.bignerdranch.android.photogallery.service.PollService;
+import com.bignerdranch.android.photogallery.util.FlickrFetchr;
+import com.bignerdranch.android.photogallery.util.QueryPreferences;
+import com.bignerdranch.android.photogallery.util.ThumbnailDownloader;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import static androidx.core.content.ContextCompat.getColor;
 
+/**
+ * Main fragment that hosts all the UI for the photo gallery.
+ */
 public class PhotoGalleryFragment extends VisibleFragment {
 
     public static final String DIALOG_PHOTO = "DialogPhoto";

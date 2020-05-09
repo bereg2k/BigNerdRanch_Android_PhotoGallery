@@ -21,7 +21,7 @@
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
         <activity
-            android:name=".PhotoGalleryActivity"
+            android:name=".activity.PhotoGalleryActivity"
             android:configChanges="orientation|screenSize|keyboardHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -29,22 +29,22 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".PhotoPageActivity"
+            android:name=".activity.PhotoPageActivity"
             android:configChanges="keyboardHidden|orientation|screenSize" />
 
-        <service android:name=".PollService" />
+        <service android:name=".service.PollService" />
         <service
-            android:name=".PollJobService"
+            android:name=".service.PollJobService"
             android:exported="true"
             android:permission="android.permission.BIND_JOB_SERVICE" />
 
-        <receiver android:name=".StartupReceiver">
+        <receiver android:name=".receiver.StartupReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
         <receiver
-            android:name=".NotificationReceiver"
+            android:name=".receiver.NotificationReceiver"
             android:exported="false">
             <intent-filter android:priority="-999">
                 <action android:name="com.bignerdranch.android.photogallery.SHOW_NOTIFICATION" />

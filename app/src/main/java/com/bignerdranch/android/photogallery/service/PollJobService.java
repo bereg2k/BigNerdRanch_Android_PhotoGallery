@@ -1,4 +1,4 @@
-package com.bignerdranch.android.photogallery;
+package com.bignerdranch.android.photogallery.service;
 
 import android.app.Activity;
 import android.app.Notification;
@@ -20,12 +20,19 @@ import android.util.Log;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
+import com.bignerdranch.android.photogallery.receiver.NotificationReceiver;
+import com.bignerdranch.android.photogallery.util.QueryPreferences;
+import com.bignerdranch.android.photogallery.R;
+import com.bignerdranch.android.photogallery.activity.PhotoGalleryActivity;
+import com.bignerdranch.android.photogallery.model.GalleryItem;
+import com.bignerdranch.android.photogallery.util.FlickrFetchr;
+
 import java.util.List;
 
-import static com.bignerdranch.android.photogallery.PollService.ACTION_SHOW_NOTIFICATION;
-import static com.bignerdranch.android.photogallery.PollService.NOTIFICATION;
-import static com.bignerdranch.android.photogallery.PollService.PERM_PRIVATE;
-import static com.bignerdranch.android.photogallery.PollService.REQUEST_CODE;
+import static com.bignerdranch.android.photogallery.service.PollService.ACTION_SHOW_NOTIFICATION;
+import static com.bignerdranch.android.photogallery.service.PollService.NOTIFICATION;
+import static com.bignerdranch.android.photogallery.service.PollService.PERM_PRIVATE;
+import static com.bignerdranch.android.photogallery.service.PollService.REQUEST_CODE;
 
 /**
  * Service for background polling for new results.
@@ -65,7 +72,7 @@ public class PollJobService extends JobService {
     }
 
     /**
-     * check if the job with {@link com.bignerdranch.android.photogallery.PollJobService#JOB_ID}
+     * check if the job with {@link PollJobService#JOB_ID}
      * is already scheduled or not.
      *
      * @param context current context
